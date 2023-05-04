@@ -29,3 +29,5 @@ dependencies:
   - jupytext
   - pip:
       - scarches
+steps:
+  - uses: actions/checkout@v3
