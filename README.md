@@ -1,4 +1,5 @@
 # batch_correction_cellpainting
+- README by Recursion Pharma on the data: https://github.com/recursionpharma/rxrx-datasets/blob/trunk/rxrx1/README.md
 
 ## Installation
 
