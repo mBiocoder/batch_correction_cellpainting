@@ -27,6 +27,7 @@ dependencies:
   - leidenalg
   - jupyter
   - jupytext
+  - beautifulsoup4
   - pip:
       - scarches
 steps:
