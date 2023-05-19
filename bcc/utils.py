@@ -9,8 +9,8 @@ import numpy as np
 from typing import Optional
 import sys
 import os
-sys.path.append('rxrx1-utils')
-import rxrx.io as rio
+sys.path.append('../bcc/rxrx1-utils/rxrx/')
+import io as rio
 
 
 def get_scarches_version():
