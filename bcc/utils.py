@@ -9,6 +9,7 @@ import numpy as np
 from typing import Optional
 import sys
 import os
+!git clone https://github.com/recursionpharma/rxrx1-utils
 sys.path.append('../bcc/rxrx1-utils/rxrx/')
 import io as rio
 
