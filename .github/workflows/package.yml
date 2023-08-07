@@ -27,7 +27,7 @@ jobs:
       - name: Install dependencies
         shell: bash -l {0}
         run: |
-          $CONDA/bin/mamba env update --file environment.yml --name base
+          $CONDA/bin/conda env update --file environment.yml --name base
       - name: Lint with flake8
         shell: bash -l {0}
         run: |
