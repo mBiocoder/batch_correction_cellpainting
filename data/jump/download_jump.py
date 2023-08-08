@@ -23,7 +23,7 @@ sample = plates.query("Metadata_PlateType=='TARGET2'")
 dframes = []
 columns = None
 for _, row in sample.iterrows():
-    s3_path = profile_formatter.format(row.to_dict())
+    s3_path = profile_formatter.format(**row.to_dict())
     dframes.append(
         pd.read_parquet(s3_path, storage_options={"anon": True}, columns=columns)
     )
@@ -50,7 +50,7 @@ controls = controls.drop("Metadata_JCP2022", axis=1)
 dframes = []
 columns = None
 for _, row in sample.iterrows():
-    s3_path = profile_formatter.format(row.to_dict())
+    s3_path = profile_formatter.format(**row.to_dict())
     temp = pd.read_parquet(s3_path, storage_options={"anon": True}, columns=columns)
     temp = temp.merge(
         controls, on=["Metadata_Source", "Metadata_Plate", "Metadata_Well"]
