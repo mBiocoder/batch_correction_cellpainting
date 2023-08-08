@@ -1,8 +1,4 @@
-import io
-import os
 import pandas as pd
-import plotly.express as px
-import plotly.io as pio
 from tqdm.notebook import tqdm
 import scanpy as sc
 
