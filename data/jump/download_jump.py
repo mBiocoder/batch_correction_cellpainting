@@ -1,5 +1,4 @@
 import pandas as pd
-from tqdm.notebook import tqdm
 import scanpy as sc
 
 h5ad_out_file = "~/batch_correction_cellpainting/data/jump/jump.h5ad"
@@ -16,19 +15,14 @@ profile_formatter = (
     "{Metadata_Batch}/{Metadata_Plate}/{Metadata_Plate}.parquet"
 )
 
-loaddata_formatter = (
-    "s3://cellpainting-gallery/cpg0016-jump/"
-    "{Metadata_Source}/workspace/load_data_csv/"
-    "{Metadata_Batch}/{Metadata_Plate}/load_data_with_illum.parquet"
-)
-
 
 # Download TARGET2 plates
+print("Start downloading TARGET2")
 sample = plates.query("Metadata_PlateType=='TARGET2'")
 
 dframes = []
 columns = None
-for _, row in tqdm(sample.iterrows(), total=len(sample)):
+for row in sample.iterrows():
     s3_path = profile_formatter.format(**row.to_dict())
     dframes.append(
         pd.read_parquet(s3_path, storage_options={"anon": True}, columns=columns)
@@ -37,6 +31,7 @@ dframes1 = pd.concat(dframes)
 
 
 # Download COMPOUND plates (controls only)
+print("Start downloading COMPOUND")
 sample = plates.query("Metadata_PlateType=='COMPOUND'")
 
 controls = wells[
@@ -54,7 +49,7 @@ controls = controls.drop("Metadata_JCP2022", axis=1)
 
 dframes = []
 columns = None
-for _, row in tqdm(sample.iterrows(), total=len(sample)):
+for row in sample.iterrows():
     s3_path = profile_formatter.format(**row.to_dict())
     temp = pd.read_parquet(s3_path, storage_options={"anon": True}, columns=columns)
     temp = temp.merge(
