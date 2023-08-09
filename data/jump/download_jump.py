@@ -1,12 +1,25 @@
 import pandas as pd
 import scanpy as sc
+import argparse as ap
 
-h5ad_out_file = "~/batch_correction_cellpainting/data/jump/jump.h5ad"
+parser = ap.ArgumentParser()
+parser.add_argument(
+    "-out", type="str", help="path to the output h5ad file", required=True
+)
+parser.add_argument(
+    "-meta_dir",
+    type="str",
+    default="batch_correction_cellpainting/data/jump/",
+    help="path to the directory with the metadata files",
+    required=False,
+)
+args = parser.parse_args()
+
 
 # read metadata files
-plates = pd.read_csv("~/batch_correction_cellpainting/data/jump/plate.csv.gz")
-wells = pd.read_csv("~/batch_correction_cellpainting/data/jump/well.csv.gz")
-compound = pd.read_csv("~/batch_correction_cellpainting/data/jump/compound.csv.gz")
+plates = pd.read_csv(f"{args.meta_dir}plate.csv.gz")
+wells = pd.read_csv(f"{args.meta_dir}well.csv.gz")
+compound = pd.read_csv(f"{args.meta_dir}compound.csv.gz")
 
 # helper formatter functions
 profile_formatter = (
@@ -34,6 +47,7 @@ dframes1 = pd.concat(dframes)
 print("Start downloading COMPOUND")
 sample = plates.query("Metadata_PlateType=='COMPOUND'")
 
+# the ids stem from the DMSO (JCP2022_033924) and POSCON8 plates
 controls = wells[
     (wells.Metadata_JCP2022 == "JCP2022_085227")
     | (wells.Metadata_JCP2022 == "JCP2022_037716")
@@ -77,4 +91,4 @@ adata = sc.AnnData(ann_dframe.iloc[:, 7:].to_numpy())
 adata.var_names = ann_dframe.columns[7:]
 adata.obs = ann_dframe.iloc[:, 0:7]
 
-adata.write(h5ad_out_file)
+adata.write(args.out)
