@@ -7,7 +7,14 @@ import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 import seaborn as sns
 
-alphabet = list("abcdefghijklmnopqrstuvwxyz".upper())
+alphabet = list("abcdefghijklmnopqrstuvwxyz".upper()) + [
+    "AA",
+    "AB",
+    "AC",
+    "AD",
+    "AE",
+    "AF",
+]
 
 
 def get_scarches_version():
@@ -66,12 +73,13 @@ def get_sirna_target_gene(
 
 
 def letter_to_int(letter: str) -> int:
-    """Get the index of a well row identified by a letter of the alphabet.
+    """Get index of a well row identified by at least 1 letter of the alphabet.
 
     This function is used by :func:`~bcc.utils.plot_well_type_positions`.
 
-    Given the well row as letter, return the index such that A = 1, B = 2 and so on.
-    For any input that is not a single uppercase letter of the alphabet, an Error is raised.
+    Given the well row as letter(s), return the index such that A = 1, B = 2 and so on.
+    For plates with more than 26 rows, the indexing continues with AA, AB and so on.
+    For any input that is not a combination of uppercase letters, an Error is raised.
 
     Args:
         letter: uppercase letter identifying the well row
@@ -80,10 +88,15 @@ def letter_to_int(letter: str) -> int:
         int:    index of the well row
 
     """
-
-    if not letter in alphabet:
-        raise ValueError("The input must be one uppercase letter of the alphabet")
-    return alphabet.index(letter) + 1
+    letters = [*letter]
+    res = 0
+    for i, l in enumerate(letters):
+        if not l in alphabet:
+            raise ValueError(f"{letter} is an invalid name for a plate row!")
+        res += (26 * i) + alphabet.index(l)
+        if i == 0:
+            res += 1
+    return res
 
 
 def plot_well_type_positions(
@@ -152,8 +165,10 @@ def plot_well_type_positions(
     df = metadata_df[[plate_column, type_column, well_column]].copy()
     df = df.drop_duplicates()
     df[type_column] = df[type_column].astype(str)
-    df["well_col_num"] = df[well_column].str[1:].astype(int)
-    df["well_row_letter"] = df[well_column].str[:1]
+    df[["well_row_letter", "well_col_num"]] = df[well_column].str.extract(
+        "([A-Za-z]+)(\d+\.?\d*)", expand=True
+    )
+    df["well_col_num"] = df["well_col_num"].astype(int)
     df["well_row_num"] = df.well_row_letter.apply(lambda letter: letter_to_int(letter))
 
     plate_names = pd.unique(df[plate_column])
@@ -187,13 +202,15 @@ def plot_well_type_positions(
                 xlim=[0, ncols + 1],
                 ylim=[0, nrows + 1],
                 ylabel="",
-                s=100,
+                s=80,
                 label=name,
                 color=color_map[name],
             )
         ax.grid(False)
         ax.invert_yaxis()
         axes.append(ax)
+        plt.xticks(fontsize=6)
+        plt.yticks(fontsize=6)
 
     _ = fig.suptitle(
         f"Distribution of {type_column} over the different plates and wells"
