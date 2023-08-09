@@ -19,7 +19,7 @@ Control plates include negative control plates, JUMP-Target-2-Compound plates, a
 Download: https://github.com/jump-cellpainting/datasets/blob/main/sample_notebook.ipynb
 
 
-## Overall Plate Layout
+### Overall Plate Layout
 
 Unique JUMP identifiers was assigned to all compound, ORF, and CRISPR perturbations, starting with "JCP2022_."
 
