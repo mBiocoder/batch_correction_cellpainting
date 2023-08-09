@@ -1,6 +1,6 @@
 # JUMP Dataset Overview
 
-The JUMP dataset includes a large production dataset with three perturbation modalities: chemical compounds, overexpression of genes using ORFs, and gene knockout using CRISPR guides (cpg0016), as well as three pilot datasets (cpg0000, cpg0001, cpg0002). The data is generated at Broad and partner sites.
+The JUMP (Joint Undertaking for Morphological Profiling) dataset includes a large production dataset with three perturbation modalities: chemical compounds, overexpression of genes using ORFs, and gene knockout using CRISPR guides (cpg0016), as well as three pilot datasets (cpg0000, cpg0001, cpg0002). The data is generated at Broad and partner sites. 
 
 For our purpose, **we only use the primary JUMP dataset (cpg0016)**. 
   - generated in 12 centers/sources (source_7 and source_13 are the same center)
@@ -29,6 +29,7 @@ Unique JUMP identifiers were assigned to all compounds, ORF, and CRISPR perturba
     * Outer columns have positive and negative controls.
     * Eight compound positive controls in the outermost columns, followed by negative controls and DMSO in other columns.
 
+Sentinel plates are designed to contain known control compounds with well-characterized responses. By including these plates in each experimental batch, one can track variations in assay performance, instrument performance, and other technical factors that may affect the data. 
 **In each batch of the cpg0016, control plates were run**: 
 
 4) JUMP-Target-1-Compound Plates:
@@ -46,7 +47,7 @@ Plates run by **some** data acquisition partners periodically (e.g., one per bat
    * An entire plate of untreated cells
    * An entire plate of cells treated with non-targeting guides (for CRISPR)
    * An entire plate where all wells were treated with DMSO 
-
+ 
 ### Metadata
 
 Schema: https://github.com/jump-cellpainting/datasets/blob/main/metadata/README.md
