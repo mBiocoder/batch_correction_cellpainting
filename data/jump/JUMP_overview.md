@@ -47,5 +47,7 @@ Unique JUMP identifiers was assigned to all compound, ORF, and CRISPR perturbati
 * Same content as JUMP-Target-1-Compound Plates, different layout. 
 
 
+## Metadata
 
+Schema: https://github.com/jump-cellpainting/datasets/blob/main/metadata/README.md
 
