@@ -96,8 +96,10 @@ adata.obs = ann_dframe.iloc[:, 0:7]
 
 
 # Label the wells
-adata.obs["well_type"] = "treatment"
-adata.obs.loc[adata.obs.Metadata_JCP2022 == "JCP2022_033924", "well_type"] = "DMSO"
+adata.obs["Metadata_WellType"] = "treatment"
+adata.obs.loc[
+    adata.obs.Metadata_JCP2022 == "JCP2022_033924", "Metadata_WellType"
+] = "DMSO"
 adata.obs.loc[
     (adata.obs.Metadata_JCP2022 == "JCP2022_085227")
     | (adata.obs.Metadata_JCP2022 == "JCP2022_037716")
@@ -107,7 +109,7 @@ adata.obs.loc[
     | (adata.obs.Metadata_JCP2022 == "JCP2022_064022")
     | (adata.obs.Metadata_JCP2022 == "JCP2022_050797")
     | (adata.obs.Metadata_JCP2022 == "JCP2022_012818"),
-    "well_type",
+    "Metadata_WellType",
 ] = "poscon"
 
 
