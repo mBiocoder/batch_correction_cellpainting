@@ -28,5 +28,6 @@ dependencies:
   - jupyter
   - jupytext
   - beautifulsoup4
+  - pip
   - pip:
       - scarches
