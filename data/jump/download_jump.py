@@ -20,6 +20,9 @@ args = parser.parse_args()
 plates = pd.read_csv(f"{args.meta_dir}plate.csv.gz")
 wells = pd.read_csv(f"{args.meta_dir}well.csv.gz")
 compound = pd.read_csv(f"{args.meta_dir}compound.csv.gz")
+compound_meta = pd.read_table(f"{args.meta_dir}JUMP-Target-2_compound_metadata.tsv")
+micro_filter = pd.read_csv(f"{args.meta_dir}microscope_filter.csv")
+micro_config = pd.read_csv(f"{args.meta_dir}microscope_config.csv")
 
 # helper formatter functions
 profile_formatter = (
@@ -91,4 +94,36 @@ adata = sc.AnnData(ann_dframe.iloc[:, 7:].to_numpy())
 adata.var_names = ann_dframe.columns[7:]
 adata.obs = ann_dframe.iloc[:, 0:7]
 
+
+# Label the wells
+adata.obs["well_type"] = "treatment"
+adata.obs.loc[adata.obs.Metadata_JCP2022 == "JCP2022_033924", "well_type"] = "DMSO"
+adata.obs.loc[
+    (adata.obs.Metadata_JCP2022 == "JCP2022_085227")
+    | (adata.obs.Metadata_JCP2022 == "JCP2022_037716")
+    | (adata.obs.Metadata_JCP2022 == "JCP2022_025848")
+    | (adata.obs.Metadata_JCP2022 == "JCP2022_046054")
+    | (adata.obs.Metadata_JCP2022 == "JCP2022_035095")
+    | (adata.obs.Metadata_JCP2022 == "JCP2022_064022")
+    | (adata.obs.Metadata_JCP2022 == "JCP2022_050797")
+    | (adata.obs.Metadata_JCP2022 == "JCP2022_012818"),
+    "well_type",
+] = "poscon"
+
+
+# Add microscope and compound metadata
+micro = micro_config.merge(micro_filter, on="Metadata_Filter_Configuration")
+micro.Metadata_Source = "source_" + micro.Metadata_Source.astype(str)
+adata.obs = adata.obs.merge(micro, on="Metadata_Source")
+
+adata.obs = pd.merge(
+    adata.obs,
+    compound_meta,
+    left_on="Metadata_InChIKey",
+    right_on="InChIKey",
+    how="left",
+)
+
+
+# Save anndata object
 adata.write(args.out)
