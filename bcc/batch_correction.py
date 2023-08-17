@@ -3,6 +3,28 @@ import scib
 import anndata as ad
 from anndata import AnnData
 from sklearn.preprocessing import MinMaxScaler
+import pertpy as pt
+
+
+def reset_corrected_anndata(adata: AnnData, obsm_key: str = "X_emb") -> AnnData:
+    """Prepare corrected AnnData object for next level of batch correction
+
+    After batch correction, this method creates a new AnnData object from
+    a corrected one where the corrected features (usually in X_emb) are
+    saved in X. This is helpful if you want to iterate batch correction
+    methods on different levels to remove nested batch effects.
+
+    Args:
+        adata:          AnnData object containing the corrected data
+        obsm_key:       Key under which the corrected data is stored
+                        in obsm of `adata`
+
+    Returns:
+        AnnData:        AnnData object with X_emb saved in X
+    """
+    new_adata = ad.AnnData(adata.obsm[obsm_key].copy())
+    new_adata.obs = adata.obs.copy()
+    return new_adata
 
 
 def scanorama_integration(
@@ -11,6 +33,13 @@ def scanorama_integration(
     hierarchical: str = None,
 ) -> AnnData:
     """Function to perfrom integration with Scanorama
+
+    Computes corrected feature matrix and embedding representation
+    of corrected data.
+    When this method is called on a higher level (i.e. use output
+    of previous run as input), one should call `reset_corrected_anndata`
+    on the input before. Else, the original data from adata.X is used
+    for the next level and not the corrected values.
 
     Args:
         adata:          AnnData object containing the data
@@ -33,13 +62,13 @@ def scanorama_integration(
         results = []
         for group in data.obs[hierarchical].unique():
             adata_part = data[data.obs[hierarchical] == group]
-            scib.ig.scanorama(adata_part, batch=batch)
+            adata_part = scib.ig.scanorama(adata_part, batch=batch)
             results.append(adata_part)
         data = ad.concat(results, merge="same")
         return data
     else:
         # do batch correction over all observations at once
-        scib.ig.scanorama(data, batch=batch)
+        data = scib.ig.scanorama(data, batch=batch)
         return data
 
 
@@ -51,6 +80,12 @@ def scgen_integration(
     hierarchical: str = None,
 ) -> AnnData:
     """Function to perfrom integration with scGen
+
+    Computes corrected feature matrix.
+    When this method is called on a higher level (i.e. use output
+    of previous run as input), one should call `reset_corrected_anndata`
+    on the input before. Else, the original data from adata.X is used
+    for the next level and not the corrected values.
 
     Args:
         adata:          AnnData object containing the data
@@ -68,7 +103,7 @@ def scgen_integration(
     Returns:
         AnnData:        Batch corrected AnnData object
     """
-    import scgen as sg
+    # import scgen as sg
 
     data = adata.copy()
     data.layers["counts"] = data.X
@@ -77,9 +112,9 @@ def scgen_integration(
         # do batch correction on lower level (iterate over high-level batches)
         results = []
         for group in data.obs[hierarchical].unique():
-            adata_part = data[data.obs[hierarchical] == group]
-            sg.SCGEN.setup_anndata(adata_part, batch_key=batch, labels_key=labels)
-            model = sg.SCGEN(adata_part)
+            adata_part = data[data.obs[hierarchical] == group].copy()
+            pt.tl.SCGEN.setup_anndata(adata_part, batch_key=batch, labels_key=labels)
+            model = pt.tl.SCGEN(adata_part)
             model.train(
                 max_epochs=max_epochs,
                 batch_size=32,
@@ -92,8 +127,8 @@ def scgen_integration(
         return data
     else:
         # do batch correction over all observations at once
-        sg.SCGEN.setup_anndata(data, batch_key=batch, labels_key=labels)
-        model = sg.SCGEN(data)
+        pt.tl.SCGEN.setup_anndata(data, batch_key=batch, labels_key=labels)
+        model = pt.tl.SCGEN(data)
         model.train(
             max_epochs=max_epochs,
             batch_size=32,
@@ -110,6 +145,12 @@ def harmony_integration(
     hierarchical: str = None,
 ) -> AnnData:
     """Function to perfrom integration with Harmony
+
+    Computes corrected feature matrix and embedding representation.
+    When this method is called on a higher level (i.e. use output
+    of previous run as input), one should call `reset_corrected_anndata`
+    on the input before. Else, the original data from adata.X is used
+    for the next level and not the corrected values.
 
     Args:
         adata:          AnnData object containing the data
@@ -132,13 +173,13 @@ def harmony_integration(
         results = []
         for group in data.obs[hierarchical].unique():
             adata_part = data[data.obs[hierarchical] == group]
-            scib.ig.harmony(adata_part, batch=batch)
+            adata_part = scib.ig.harmony(adata_part, batch=batch)
             results.append(adata_part)
         data = ad.concat(results, merge="same")
         return data
     else:
         # do batch correction over all observations at once
-        scib.ig.harmony(data, batch=batch)
+        data = scib.ig.harmony(data, batch=batch)
         return data
 
 
@@ -150,6 +191,12 @@ def scanvi_integration(
     hierarchical: str = None,
 ) -> AnnData:
     """Function to perfrom integration with scanVI
+
+    Computes corrected feature matrix and embedding representation.
+    When this method is called on a higher level (i.e. use output
+    of previous run as input), one should call `reset_corrected_anndata`
+    on the input before. Else, the original data from adata.X is used
+    for the next level and not the corrected values.
 
     Args:
         adata:          AnnData object containing the data
@@ -178,7 +225,7 @@ def scanvi_integration(
         scanvi_results = []
         for group in scanvi.obs[hierarchical].unique():
             adata_part = scanvi[scanvi.obs[hierarchical] == group]
-            scib.ig.scanvi(
+            adata_part = scib.ig.scanvi(
                 adata_part, batch=batch, labels=labels, max_epochs=max_epochs
             )
             scanvi_results.append(adata_part)
@@ -186,7 +233,9 @@ def scanvi_integration(
         return scanvi
     else:
         # do batch correction over all observations at once
-        scib.ig.scanvi(scanvi, batch=batch, labels=labels, max_epochs=max_epochs)
+        scanvi = scib.ig.scanvi(
+            scanvi, batch=batch, labels=labels, max_epochs=max_epochs
+        )
         return scanvi
 
 
@@ -197,6 +246,12 @@ def scvi_integration(
     hierarchical: str = None,
 ) -> AnnData:
     """Function to perfrom integration with scVI
+
+    Computes corrected feature matrix and embedding representation.
+    When this method is called on a higher level (i.e. use output
+    of previous run as input), one should call `reset_corrected_anndata`
+    on the input before. Else, the original data from adata.X is used
+    for the next level and not the corrected values.
 
     Args:
         adata:          AnnData object containing the data
@@ -223,11 +278,11 @@ def scvi_integration(
         scvi_results = []
         for group in scvi.obs[hierarchical].unique():
             adata_part = scvi[scvi.obs[hierarchical] == group]
-            scib.ig.scvi(adata_part, batch=batch, max_epochs=max_epochs)
+            adata_part = scib.ig.scvi(adata_part, batch=batch, max_epochs=max_epochs)
             scvi_results.append(adata_part)
         scvi = ad.concat(scvi_results, merge="same")
         return scvi
     else:
         # do batch correction over all observations at once
-        scib.ig.scvi(scvi, batch=batch, max_epochs=max_epochs)
+        scvi = scib.ig.scvi(scvi, batch=batch, max_epochs=max_epochs)
         return scvi

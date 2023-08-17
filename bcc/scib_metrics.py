@@ -9,8 +9,8 @@ kbet = rpackages.importr("kBET")
 
 def evaluate_methods(
     adata_unintegrated: AnnData,
-    adatas_integrated: list(AnnData),
-    method_names: list(str),
+    adatas_integrated: list[AnnData],
+    method_names: list[str],
     label_key: str,
     batch_key: str,
 ) -> pd.DataFrame:
@@ -43,13 +43,13 @@ def evaluate_methods(
     for i, adata in enumerate(adatas_integrated):
         if i == 0:
             result_frames.append(
-                _evaluate(
+                evaluate(
                     adata_unintegrated, adata, label_key, batch_key, method_names[i]
                 )
             )
         else:
             result_frames.append(
-                _evaluate(
+                evaluate(
                     adata_unintegrated,
                     adata,
                     label_key,
@@ -64,7 +64,7 @@ def evaluate_methods(
     return pd.concat(result_frames, axis=1)
 
 
-def _evaluate(
+def evaluate(
     adata_unintegrated: AnnData,
     adata_integrated: AnnData,
     label_key: str,
@@ -72,7 +72,7 @@ def _evaluate(
     integration_method: str,
     compute_unintegrated: bool = True,
 ) -> pd.DataFrame:
-    """Compute all scIB metrics
+    """Compute all scIB metrics after high-level integration
 
     Compute all scIB metrics for unintegrated and integrated data
     and return the results in form of a pandas DataFrame.
@@ -142,6 +142,107 @@ def _evaluate(
     )
     if compute_unintegrated:
         results["Unintegrated"] = unintegrated_results
+    return results
+
+
+def evaluate_low_level(
+    adata_unintegrated: AnnData,
+    adata_integrated: AnnData,
+    label_key: str,
+    batch_key: str,
+    group_key: str,
+    integration_method: str,
+    compute_unintegrated: bool = True,
+) -> pd.DataFrame:
+    """Compute all scIB metrics after low-level integration
+
+    Compute all scIB metrics for unintegrated and integrated data
+    and return the results in form of a pandas DataFrame.
+    When specified, metrics are only computed for the integrated data.
+    This method is supposed to evaluate the low-level integration:
+    it iterated over the groups where batch correction was performed
+    separately and computes and returns the scIB metrics for each group.
+
+    Args:
+        adata_unintegrated:     AnnData object containing unintegrated data
+                                Should **not yet** be prepared!
+        adata_integrated:       AnnData object containing integrated data
+                                Should **not yet** be prepared!
+        label_key:              Column name of the biological labels
+        batch_key:              Column name of the batch labels
+        group_key:              Column name of the labels that define the
+                                groups (higher level of the nested batch effects)
+        integration_method:     Name of the used integration method
+        compute_unintegrated:   If False, skip metrics computation for
+                                unintegrated data
+
+    Returns:
+        DataFrame:          All scIB metrics saved in a DataFrame
+    """
+    groups = adata_unintegrated.obs[group_key].unique()
+    results = []
+    for group in groups:
+        # prepare AnnData objects
+        adata_int = _metrics_preparation(
+            adata_integrated[adata_integrated.obs[group_key] == group]
+        )
+        adata_unint = _metrics_preparation(
+            adata_unintegrated[adata_unintegrated.obs[group_key] == group]
+        )
+        # compute metrics
+        if compute_unintegrated:
+            unintegrated_results = [
+                _compute_ari(adata_unint, label_key),
+                _compute_clisi(adata_unint, label_key),
+                _compute_il_asw(adata_unint, label_key, batch_key),
+                _compute_il_f1(adata_unint, label_key, batch_key),
+                _compute_nmi(adata_unint, label_key),
+                _compute_silhouette(adata_unint, label_key),
+                _compute_graph_connectivity(adata_unint, label_key),
+                _compute_ilisi(adata_unint, batch_key),
+                _compute_kbet(adata_unint, label_key, batch_key),
+                _compute_pcr(adata_unint, batch_key),
+                _compute_batch_asw(adata_unint, label_key, batch_key),
+            ]
+        integrated_results = [
+            _compute_ari(adata_unint, label_key, integrated=adata_int),
+            _compute_clisi(adata_unint, label_key, adata_int),
+            _compute_il_asw(adata_unint, label_key, batch_key, adata_int),
+            _compute_il_f1(adata_unint, label_key, batch_key, adata_int),
+            _compute_nmi(adata_unint, label_key, integrated=adata_int),
+            _compute_silhouette(adata_unint, label_key, adata_int),
+            _compute_graph_connectivity(adata_unint, label_key, adata_int),
+            _compute_ilisi(adata_unint, batch_key, adata_int),
+            _compute_kbet(adata_unint, label_key, batch_key, adata_int),
+            _compute_pcr(adata_unint, batch_key, adata_int),
+            _compute_batch_asw(adata_unint, label_key, batch_key, adata_int),
+        ]
+        # put results into dataframe
+        result = pd.DataFrame(
+            {
+                "Metric": [
+                    "ARI",
+                    "cLISI",
+                    "Isolated_labels_ASW",
+                    "Isolated_labels_F1",
+                    "NMI",
+                    "Silhouette",
+                    "Graph_connectivity",
+                    "iLISI",
+                    "kBET",
+                    "PCR_comparison",
+                    "Batch_ASW",
+                ],
+                "Group": [group] * len(integrated_results),
+                integration_method: integrated_results,
+            }
+        )
+        if compute_unintegrated:
+            result["Unintegrated"] = unintegrated_results
+        results.append(result)
+    # combine and return all dataframes
+    results = pd.concat(results, axis=0)
+    results = results.reset_index(drop=True)
     return results
 
 
