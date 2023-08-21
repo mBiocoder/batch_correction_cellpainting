@@ -32,9 +32,9 @@ def evaluate_methods(
         DataFrame:          scIB metrics for each method saved in a DataFrame
     """
     # prepare AnnData objects
-    adata_unintegrated = _metrics_preparation(adata_unintegrated, label_key)
+    adata_unintegrated = metrics_preparation(adata_unintegrated, label_key)
     adatas_integrated = [
-        _metrics_preparation(adata, label_key, integrated=True)
+        metrics_preparation(adata, label_key, integrated=True)
         for adata in adatas_integrated
     ]
 
@@ -152,6 +152,7 @@ def evaluate_low_level(
     batch_key: str,
     group_key: str,
     integration_method: str,
+    integrated_obsm_key: str = "X_emb",
     compute_unintegrated: bool = True,
 ) -> pd.DataFrame:
     """Compute all scIB metrics after low-level integration
@@ -183,11 +184,16 @@ def evaluate_low_level(
     results = []
     for group in groups:
         # prepare AnnData objects
-        adata_int = _metrics_preparation(
-            adata_integrated[adata_integrated.obs[group_key] == group]
+        adata_int = metrics_preparation(
+            adata_integrated[adata_integrated.obs[group_key] == group],
+            label_key,
+            True,
+            integrated_obsm_key=integrated_obsm_key,
         )
-        adata_unint = _metrics_preparation(
-            adata_unintegrated[adata_unintegrated.obs[group_key] == group]
+        adata_unint = metrics_preparation(
+            adata_unintegrated[adata_unintegrated.obs[group_key] == group],
+            label_key,
+            integrated_obsm_key=integrated_obsm_key,
         )
         # compute metrics
         if compute_unintegrated:
@@ -246,10 +252,11 @@ def evaluate_low_level(
     return results
 
 
-def _metrics_preparation(
+def metrics_preparation(
     adata: AnnData,
     label_key: str,
     integrated: bool = False,
+    integrated_obsm_key: str = "X_emb",
     cluster_key: str = "cluster",
 ) -> AnnData:
     """Prepare an AnnData object for scIB metrics computation
@@ -273,7 +280,7 @@ def _metrics_preparation(
         sc.pp.pca(adata)
         sc.pp.neighbors(adata, n_neighbors=15, use_rep="X_pca")
     else:
-        sc.pp.neighbors(adata, n_neighbors=15, use_rep="X_emb")
+        sc.pp.neighbors(adata, n_neighbors=15, use_rep=integrated_obsm_key)
     scib.me.cluster_optimal_resolution(
         adata, cluster_key=cluster_key, label_key=label_key
     )
