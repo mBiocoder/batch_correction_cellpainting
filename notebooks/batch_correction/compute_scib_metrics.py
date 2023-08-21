@@ -88,5 +88,6 @@ df = evaluate(
     "Metadata_JCP2022",
     "Metadata_Source",
     "Scanorama",
+    compute_unintegrated=False,
 )
 df.to_csv(f"{args.data}scib_scanorama_high.csv")
