@@ -9,6 +9,12 @@ parser.add_argument(
     default="batch_correction_cellpainting/data/jump/",
     help="Path to the data directory",
 )
+parser.add_argument(
+    "--ignore_kbet",
+    action="store_true",
+    default=False,
+    help="When set, the kBET scores are not computed",
+)
 args = parser.parse_args()
 
 adata_unintegrated = sc.read_h5ad(f"{args.data}jump_target2_spherized.h5ad")
@@ -22,6 +28,7 @@ df = evaluate_low_level(
     "Metadata_Plate",
     "Metadata_Source",
     "Harmony",
+    compute_kbet=args.ignore_kbet,
 )
 df.to_csv(f"{args.data}scib_harmony_low.csv")
 
@@ -34,6 +41,7 @@ df = evaluate_low_level(
     "Metadata_Source",
     "Scanorama",
     compute_unintegrated=False,
+    compute_kbet=args.ignore_kbet,
 )
 df.to_csv(f"{args.data}scib_scanorama_low.csv")
 
@@ -47,6 +55,7 @@ df = evaluate_low_level(
     "scGen",
     compute_unintegrated=False,
     integrated_obsm_key="corrected_latent",
+    compute_kbet=args.ignore_kbet,
 )
 df.to_csv(f"{args.data}scib_scgen_low.csv")
 
@@ -60,6 +69,7 @@ df = evaluate_low_level(
     "scanVI",
     compute_unintegrated=False,
     integrated_obsm_key="X_emb",
+    compute_kbet=args.ignore_kbet,
 )
 df.to_csv(f"{args.data}scib_scanvi_low.csv")
 
@@ -75,6 +85,7 @@ df = evaluate(
     "Metadata_JCP2022",
     "Metadata_Source",
     "Harmony",
+    compute_kbet=args.ignore_kbet,
 )
 df.to_csv(f"{args.data}scib_harmony_high.csv")
 
@@ -89,5 +100,6 @@ df = evaluate(
     "Metadata_Source",
     "Scanorama",
     compute_unintegrated=False,
+    compute_kbet=args.ignore_kbet,
 )
 df.to_csv(f"{args.data}scib_scanorama_high.csv")
