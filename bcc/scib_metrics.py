@@ -70,6 +70,7 @@ def evaluate(
     integration_method: str,
     compute_unintegrated: bool = True,
     compute_kbet: bool = True,
+    integrated_obsm_key: str = "X_emb",
 ) -> pd.DataFrame:
     """Compute all scIB metrics after high-level integration
 
@@ -108,15 +109,47 @@ def evaluate(
         ]
     integrated_results = [
         _compute_ari(adata_unintegrated, label_key, integrated=adata_integrated),
-        _compute_clisi(adata_unintegrated, label_key, adata_integrated),
-        _compute_il_asw(adata_unintegrated, label_key, batch_key, adata_integrated),
+        _compute_clisi(
+            adata_unintegrated,
+            label_key,
+            adata_integrated,
+            integrated_obsm_key=integrated_obsm_key,
+        ),
+        _compute_il_asw(
+            adata_unintegrated,
+            label_key,
+            batch_key,
+            adata_integrated,
+            integrated_obsm_key=integrated_obsm_key,
+        ),
         _compute_il_f1(adata_unintegrated, label_key, batch_key, adata_integrated),
         _compute_nmi(adata_unintegrated, label_key, integrated=adata_integrated),
-        _compute_silhouette(adata_unintegrated, label_key, adata_integrated),
+        _compute_silhouette(
+            adata_unintegrated,
+            label_key,
+            adata_integrated,
+            integrated_obsm_key=integrated_obsm_key,
+        ),
         _compute_graph_connectivity(adata_unintegrated, label_key, adata_integrated),
-        _compute_ilisi(adata_unintegrated, batch_key, adata_integrated),
-        _compute_pcr(adata_unintegrated, batch_key, adata_integrated),
-        _compute_batch_asw(adata_unintegrated, label_key, batch_key, adata_integrated),
+        _compute_ilisi(
+            adata_unintegrated,
+            batch_key,
+            adata_integrated,
+            integrated_obsm_key=integrated_obsm_key,
+        ),
+        _compute_pcr(
+            adata_unintegrated,
+            batch_key,
+            adata_integrated,
+            integrated_obsm_key=integrated_obsm_key,
+        ),
+        _compute_batch_asw(
+            adata_unintegrated,
+            label_key,
+            batch_key,
+            adata_integrated,
+            integrated_obsm_key=integrated_obsm_key,
+        ),
     ]
 
     metrics = [
@@ -136,7 +169,13 @@ def evaluate(
         kbet = rpackages.importr("kBET")
         metrics.append("kBET")
         integrated_results.append(
-            compute_kbet(adata_unintegrated, label_key, batch_key, adata_integrated)
+            compute_kbet(
+                adata_unintegrated,
+                label_key,
+                batch_key,
+                adata_integrated,
+                integrated_obsm_key=integrated_obsm_key,
+            )
         )
         if compute_unintegrated:
             unintegrated_results.append(
@@ -226,15 +265,47 @@ def evaluate_low_level(
 
         integrated_results = [
             _compute_ari(adata_unint, label_key, integrated=adata_int),
-            _compute_clisi(adata_unint, label_key, adata_int),
-            _compute_il_asw(adata_unint, label_key, batch_key, adata_int),
+            _compute_clisi(
+                adata_unint,
+                label_key,
+                adata_int,
+                integrated_obsm_key=integrated_obsm_key,
+            ),
+            _compute_il_asw(
+                adata_unint,
+                label_key,
+                batch_key,
+                adata_int,
+                integrated_obsm_key=integrated_obsm_key,
+            ),
             _compute_il_f1(adata_unint, label_key, batch_key, adata_int),
             _compute_nmi(adata_unint, label_key, integrated=adata_int),
-            _compute_silhouette(adata_unint, label_key, adata_int),
+            _compute_silhouette(
+                adata_unint,
+                label_key,
+                adata_int,
+                integrated_obsm_key=integrated_obsm_key,
+            ),
             _compute_graph_connectivity(adata_unint, label_key, adata_int),
-            _compute_ilisi(adata_unint, batch_key, adata_int),
-            _compute_pcr(adata_unint, batch_key, adata_int),
-            _compute_batch_asw(adata_unint, label_key, batch_key, adata_int),
+            _compute_ilisi(
+                adata_unint,
+                batch_key,
+                adata_int,
+                integrated_obsm_key=integrated_obsm_key,
+            ),
+            _compute_pcr(
+                adata_unint,
+                batch_key,
+                adata_int,
+                integrated_obsm_key=integrated_obsm_key,
+            ),
+            _compute_batch_asw(
+                adata_unint,
+                label_key,
+                batch_key,
+                adata_int,
+                integrated_obsm_key=integrated_obsm_key,
+            ),
         ]
 
         metrics = [
@@ -254,7 +325,13 @@ def evaluate_low_level(
             kbet = rpackages.importr("kBET")
             metrics.append("kBET")
             integrated_results.append(
-                compute_kbet(adata_unint, label_key, batch_key, adata_int)
+                compute_kbet(
+                    adata_unint,
+                    label_key,
+                    batch_key,
+                    adata_int,
+                    integrated_obsm_key=integrated_obsm_key,
+                )
             )
             if compute_unintegrated:
                 unintegrated_results.append(
@@ -293,11 +370,13 @@ def metrics_preparation(
     is performed first.
 
     Args:
-        adata:          AnnData object containing the data
-        label_key:      Column name of the biological labels
-        integrated:     Whether the AnnData contains integrated
-                        data or not
-        cluster_key:    Key for storing the cluster labels
+        adata:                  AnnData object containing the data
+        label_key:              Column name of the biological labels
+        integrated:             Whether the AnnData contains integrated
+                                data or not
+        integrated_obsm_key:    Key in .obsm under which the integration
+                                is stored in `adata`
+        cluster_key:            Key for storing the cluster labels
 
     Returns:
         AnnData:        Batch corrected AnnData object
@@ -349,6 +428,7 @@ def _compute_clisi(
     unintegrated: AnnData,
     label_key: str,
     integrated: AnnData = None,
+    integrated_obsm_key: str = "X_emb",
 ) -> float:
     """Compute biological conservation metric cLISI
 
@@ -372,7 +452,7 @@ def _compute_clisi(
         return scib.me.clisi_graph(unintegrated, label_key=label_key, type_="full")
     else:
         return scib.me.clisi_graph(
-            integrated, label_key=label_key, type_="embed", use_rep="X_emb"
+            integrated, label_key=label_key, type_="embed", use_rep=integrated_obsm_key
         )
 
 
@@ -381,12 +461,12 @@ def _compute_il_asw(
     label_key: str,
     batch_key: str,
     integrated: AnnData = None,
+    integrated_obsm_key: str = "X_emb",
 ) -> float:
     """Compute biological conservation metric isolated labels ASW
 
     Quantify how well isolated labels are distinguished from all
     other labels using the average-width silhouette score (ASW).
-    TODO: output types?
 
     Args:
         unintegrated:   AnnData object with unintegrated data.
@@ -407,7 +487,10 @@ def _compute_il_asw(
         )
     else:
         return scib.me.isolated_labels_asw(
-            integrated, label_key=label_key, batch_key=batch_key, embed="X_emb"
+            integrated,
+            label_key=label_key,
+            batch_key=batch_key,
+            embed=integrated_obsm_key,
         )
 
 
@@ -483,6 +566,7 @@ def _compute_silhouette(
     unintegrated: AnnData,
     label_key: str,
     integrated: AnnData = None,
+    integrated_obsm_key: str = "X_emb",
 ) -> float:
     """Compute biological conservation metric Silhouette
 
@@ -504,7 +588,9 @@ def _compute_silhouette(
     if not isinstance(integrated, AnnData):
         return scib.me.silhouette(unintegrated, label_key=label_key, embed="X_pca")
     else:
-        return scib.me.silhouette(integrated, label_key=label_key, embed="X_emb")
+        return scib.me.silhouette(
+            integrated, label_key=label_key, embed=integrated_obsm_key
+        )
 
 
 def _compute_graph_connectivity(
@@ -540,6 +626,7 @@ def _compute_ilisi(
     unintegrated: AnnData,
     batch_key: str,
     integrated: AnnData = None,
+    integrated_obsm_key: str = "X_emb",
 ) -> float:
     """Compute batch correction metric iLISI
 
@@ -563,7 +650,7 @@ def _compute_ilisi(
         return scib.me.ilisi_graph(unintegrated, batch_key=batch_key, type_="full")
     else:
         return scib.me.ilisi_graph(
-            integrated, batch_key=batch_key, type_="embed", use_rep="X_emb"
+            integrated, batch_key=batch_key, type_="embed", use_rep=integrated_obsm_key
         )
 
 
@@ -572,6 +659,7 @@ def compute_kbet(
     label_key: str,
     batch_key: str,
     integrated: AnnData = None,
+    integrated_obsm_key: str = "X_emb",
 ) -> float:
     """Compute batch correction metric kBET
 
@@ -607,7 +695,7 @@ def compute_kbet(
             batch_key=batch_key,
             label_key=label_key,
             type_="embed",
-            embed="X_emb",
+            embed=integrated_obsm_key,
         )
 
 
@@ -615,6 +703,7 @@ def _compute_pcr(
     unintegrated: AnnData,
     covariate: str,
     integrated: AnnData = None,
+    integrated_obsm_key: str = "X_emb",
 ) -> float:
     """Compute batch correction metric PCR
 
@@ -639,7 +728,7 @@ def _compute_pcr(
         return pd.NA
     else:
         return scib.me.pcr_comparison(
-            unintegrated, integrated, covariate=covariate, embed="X_emb"
+            unintegrated, integrated, covariate=covariate, embed=integrated_obsm_key
         )
 
 
@@ -648,6 +737,7 @@ def _compute_batch_asw(
     label_key: str,
     batch_key: str,
     integrated: AnnData = None,
+    integrated_obsm_key: str = "X_emb",
 ) -> float:
     """Compute batch correction metric batch ASW
 
@@ -675,5 +765,8 @@ def _compute_batch_asw(
         )
     else:
         return scib.me.silhouette_batch(
-            integrated, batch_key=batch_key, label_key=label_key, embed="X_emb"
+            integrated,
+            batch_key=batch_key,
+            label_key=label_key,
+            embed=integrated_obsm_key,
         )

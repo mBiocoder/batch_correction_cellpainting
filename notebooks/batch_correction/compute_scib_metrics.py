@@ -45,19 +45,19 @@ df = evaluate_low_level(
 )
 df.to_csv(f"{args.data}scib_scanorama_low.csv")
 
-adata_integrated = sc.read_h5ad(f"{args.data}scgen_low.h5ad")
-df = evaluate_low_level(
-    adata_unintegrated,
-    adata_integrated,
-    "Metadata_JCP2022",
-    "Metadata_Plate",
-    "Metadata_Source",
-    "scGen",
-    compute_unintegrated=False,
-    integrated_obsm_key="corrected_latent",
-    compute_kbet=args.ignore_kbet,
-)
-df.to_csv(f"{args.data}scib_scgen_low.csv")
+# adata_integrated = sc.read_h5ad(f"{args.data}scgen_low.h5ad")
+# df = evaluate_low_level(
+#     adata_unintegrated,
+#     adata_integrated,
+#     "Metadata_JCP2022",
+#     "Metadata_Plate",
+#     "Metadata_Source",
+#     "scGen",
+#     compute_unintegrated=False,
+#     integrated_obsm_key="corrected_latent",
+#     compute_kbet=args.ignore_kbet,
+# )
+# df.to_csv(f"{args.data}scib_scgen_low.csv")
 
 adata_integrated = sc.read_h5ad(f"{args.data}scanvi_low.h5ad")
 df = evaluate_low_level(
