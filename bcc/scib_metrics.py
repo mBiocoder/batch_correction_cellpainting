@@ -4,8 +4,6 @@ import pandas as pd
 import rpy2.robjects.packages as rpackages
 from anndata import AnnData
 
-kbet = rpackages.importr("kBET")
-
 
 def evaluate_methods(
     adata_unintegrated: AnnData,
@@ -71,6 +69,7 @@ def evaluate(
     batch_key: str,
     integration_method: str,
     compute_unintegrated: bool = True,
+    compute_kbet: bool = True,
 ) -> pd.DataFrame:
     """Compute all scIB metrics after high-level integration
 
@@ -88,6 +87,7 @@ def evaluate(
         integration_method:     Name of the used integration method
         compute_unintegrated:   If False, skip metrics computation for
                                 unintegrated data
+        compute_kbet:           Whether or not to compute the kBET score
 
     Returns:
         DataFrame:          All scIB metrics saved in a DataFrame
@@ -103,7 +103,6 @@ def evaluate(
             _compute_silhouette(adata_unintegrated, label_key),
             _compute_graph_connectivity(adata_unintegrated, label_key),
             _compute_ilisi(adata_unintegrated, batch_key),
-            _compute_kbet(adata_unintegrated, label_key, batch_key),
             _compute_pcr(adata_unintegrated, batch_key),
             _compute_batch_asw(adata_unintegrated, label_key, batch_key),
         ]
@@ -116,27 +115,38 @@ def evaluate(
         _compute_silhouette(adata_unintegrated, label_key, adata_integrated),
         _compute_graph_connectivity(adata_unintegrated, label_key, adata_integrated),
         _compute_ilisi(adata_unintegrated, batch_key, adata_integrated),
-        _compute_kbet(adata_unintegrated, label_key, batch_key, adata_integrated),
         _compute_pcr(adata_unintegrated, batch_key, adata_integrated),
         _compute_batch_asw(adata_unintegrated, label_key, batch_key, adata_integrated),
     ]
 
+    metrics = [
+        "ARI",
+        "cLISI",
+        "Isolated_labels_ASW",
+        "Isolated_labels_F1",
+        "NMI",
+        "Silhouette",
+        "Graph_connectivity",
+        "iLISI",
+        "PCR_comparison",
+        "Batch_ASW",
+    ]
+
+    if compute_kbet:
+        kbet = rpackages.importr("kBET")
+        metrics.append("kBET")
+        integrated_results.append(
+            compute_kbet(adata_unintegrated, label_key, batch_key, adata_integrated)
+        )
+        if compute_unintegrated:
+            unintegrated_results.append(
+                compute_kbet(adata_unintegrated, label_key, batch_key)
+            )
+
     # return result as pandas DataFrame
     results = pd.DataFrame(
         {
-            "Metric": [
-                "ARI",
-                "cLISI",
-                "Isolated_labels_ASW",
-                "Isolated_labels_F1",
-                "NMI",
-                "Silhouette",
-                "Graph_connectivity",
-                "iLISI",
-                "kBET",
-                "PCR_comparison",
-                "Batch_ASW",
-            ],
+            "Metric": metrics,
             integration_method: integrated_results,
         }
     )
@@ -154,6 +164,7 @@ def evaluate_low_level(
     integration_method: str,
     integrated_obsm_key: str = "X_emb",
     compute_unintegrated: bool = True,
+    compute_kbet: bool = True,
 ) -> pd.DataFrame:
     """Compute all scIB metrics after low-level integration
 
@@ -174,8 +185,11 @@ def evaluate_low_level(
         group_key:              Column name of the labels that define the
                                 groups (higher level of the nested batch effects)
         integration_method:     Name of the used integration method
+        integrated_obsm_key:    Key under which the integration is stored in .obsm
+                                of `adata_integrated`
         compute_unintegrated:   If False, skip metrics computation for
                                 unintegrated data
+        compute_kbet:           Whether or not to compute the kBET score
 
     Returns:
         DataFrame:          All scIB metrics saved in a DataFrame
@@ -206,10 +220,10 @@ def evaluate_low_level(
                 _compute_silhouette(adata_unint, label_key),
                 _compute_graph_connectivity(adata_unint, label_key),
                 _compute_ilisi(adata_unint, batch_key),
-                _compute_kbet(adata_unint, label_key, batch_key),
                 _compute_pcr(adata_unint, batch_key),
                 _compute_batch_asw(adata_unint, label_key, batch_key),
             ]
+
         integrated_results = [
             _compute_ari(adata_unint, label_key, integrated=adata_int),
             _compute_clisi(adata_unint, label_key, adata_int),
@@ -219,26 +233,38 @@ def evaluate_low_level(
             _compute_silhouette(adata_unint, label_key, adata_int),
             _compute_graph_connectivity(adata_unint, label_key, adata_int),
             _compute_ilisi(adata_unint, batch_key, adata_int),
-            _compute_kbet(adata_unint, label_key, batch_key, adata_int),
             _compute_pcr(adata_unint, batch_key, adata_int),
             _compute_batch_asw(adata_unint, label_key, batch_key, adata_int),
         ]
+
+        metrics = [
+            "ARI",
+            "cLISI",
+            "Isolated_labels_ASW",
+            "Isolated_labels_F1",
+            "NMI",
+            "Silhouette",
+            "Graph_connectivity",
+            "iLISI",
+            "PCR_comparison",
+            "Batch_ASW",
+        ]
+
+        if compute_kbet:
+            kbet = rpackages.importr("kBET")
+            metrics.append("kBET")
+            integrated_results.append(
+                compute_kbet(adata_unint, label_key, batch_key, adata_int)
+            )
+            if compute_unintegrated:
+                unintegrated_results.append(
+                    compute_kbet(adata_unint, label_key, batch_key)
+                )
+
         # put results into dataframe
         result = pd.DataFrame(
             {
-                "Metric": [
-                    "ARI",
-                    "cLISI",
-                    "Isolated_labels_ASW",
-                    "Isolated_labels_F1",
-                    "NMI",
-                    "Silhouette",
-                    "Graph_connectivity",
-                    "iLISI",
-                    "kBET",
-                    "PCR_comparison",
-                    "Batch_ASW",
-                ],
+                "Metric": metrics,
                 "Group": [group] * len(integrated_results),
                 integration_method: integrated_results,
             }
@@ -541,7 +567,7 @@ def _compute_ilisi(
         )
 
 
-def _compute_kbet(
+def compute_kbet(
     unintegrated: AnnData,
     label_key: str,
     batch_key: str,
