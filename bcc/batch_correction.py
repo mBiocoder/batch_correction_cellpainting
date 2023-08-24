@@ -103,9 +103,10 @@ def scgen_integration(
     Returns:
         AnnData:        Batch corrected AnnData object
     """
-    # import scgen as sg
-
     data = adata.copy()
+    # min-max scaling, else you can get unstable learning behavior
+    scaler = MinMaxScaler()
+    data.X = scaler.fit_transform(data.X)
     data.layers["counts"] = data.X
 
     if isinstance(hierarchical, str):
