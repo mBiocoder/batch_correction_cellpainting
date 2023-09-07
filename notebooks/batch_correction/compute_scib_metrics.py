@@ -13,7 +13,7 @@ parser.add_argument(
     "--compute_kbet",
     action="store_true",
     default=False,
-    help="When set, the kBET scores are not computed",
+    help="When set, the kBET scores are computed",
 )
 args = parser.parse_args()
 
@@ -21,30 +21,30 @@ args = parser.parse_args()
 adata_unintegrated = sc.read_h5ad(f"{args.data}jump_target2_spherized.h5ad")
 
 # metrics computation low level
-# adata_integrated = sc.read_h5ad(f"{args.data}harmony_low.h5ad")
-# df = evaluate_low_level(
-#     adata_unintegrated,
-#     adata_integrated,
-#     "Metadata_JCP2022",
-#     "Metadata_Plate",
-#     "Metadata_Source",
-#     "Harmony",
-#     compute_kbet=args.ignore_kbet,
-# )
-# df.to_csv(f"{args.data}scib_harmony_low.csv")
+adata_integrated = sc.read_h5ad(f"{args.data}harmony_low.h5ad")
+df = evaluate_low_level(
+    adata_unintegrated,
+    adata_integrated,
+    "Metadata_JCP2022",
+    "Metadata_Plate",
+    "Metadata_Source",
+    "Harmony",
+    compute_kbet=args.compute_kbet,
+)
+df.to_csv(f"{args.data}scib_harmony_low.csv")
 
-# adata_integrated = sc.read_h5ad(f"{args.data}scanorama_low.h5ad")
-# df = evaluate_low_level(
-#     adata_unintegrated,
-#     adata_integrated,
-#     "Metadata_JCP2022",
-#     "Metadata_Plate",
-#     "Metadata_Source",
-#     "Scanorama",
-#     compute_unintegrated=False,
-#     compute_kbet=args.ignore_kbet,
-# )
-# df.to_csv(f"{args.data}scib_scanorama_low.csv")
+adata_integrated = sc.read_h5ad(f"{args.data}scanorama_low.h5ad")
+df = evaluate_low_level(
+    adata_unintegrated,
+    adata_integrated,
+    "Metadata_JCP2022",
+    "Metadata_Plate",
+    "Metadata_Source",
+    "Scanorama",
+    compute_unintegrated=False,
+    compute_kbet=args.compute_kbet,
+)
+df.to_csv(f"{args.data}scib_scanorama_low.csv")
 
 adata_integrated = sc.read_h5ad(f"{args.data}scgen_low.h5ad")
 df = evaluate_low_level(
@@ -56,7 +56,7 @@ df = evaluate_low_level(
     "scGen",
     compute_unintegrated=False,
     integrated_obsm_key="corrected_latent",
-    compute_kbet=args.ignore_kbet,
+    compute_kbet=args.compute_kbet,
 )
 df.to_csv(f"{args.data}scib_scgen_low.csv")
 
@@ -70,7 +70,7 @@ df = evaluate_low_level(
     "scanVI",
     compute_unintegrated=False,
     integrated_obsm_key="X_emb",
-    compute_kbet=args.ignore_kbet,
+    compute_kbet=args.compute_kbet,
 )
 df.to_csv(f"{args.data}scib_scanvi_low.csv")
 
@@ -83,7 +83,7 @@ df = evaluate_low_level(
     "Metadata_Source",
     "scVI",
     compute_unintegrated=False,
-    compute_kbet=args.ignore_kbet,
+    compute_kbet=args.compute_kbet,
 )
 df.to_csv(f"{args.data}scib_scvi_low.csv")
 
@@ -99,14 +99,12 @@ df = evaluate(
     "Metadata_JCP2022",
     "Metadata_Source",
     "Harmony",
-    compute_kbet=args.ignore_kbet,
+    compute_kbet=args.compute_kbet,
 )
 df.to_csv(f"{args.data}scib_harmony_high.csv")
 
 adata_integrated = sc.read_h5ad(f"{args.data}scanorama_high.h5ad")
-adata_integrated = metrics_preparation(
-    adata_integrated, "Metadata_JCP2022", True, integrated_obsm_key="X_emb"
-)
+adata_integrated = metrics_preparation(adata_integrated, "Metadata_JCP2022", True, integrated_obsm_key="X_emb")
 df = evaluate(
     adata_unintegrated,
     adata_integrated,
@@ -114,7 +112,7 @@ df = evaluate(
     "Metadata_Source",
     "Scanorama",
     compute_unintegrated=False,
-    compute_kbet=args.ignore_kbet,
+    compute_kbet=args.compute_kbet,
 )
 df.to_csv(f"{args.data}scib_scanorama_high.csv")
 
@@ -130,14 +128,12 @@ df = evaluate(
     "scGen",
     compute_unintegrated=False,
     integrated_obsm_key="corrected_latent",
-    compute_kbet=args.ignore_kbet,
+    compute_kbet=args.compute_kbet,
 )
 df.to_csv(f"{args.data}scib_scgen_high.csv")
 
 adata_integrated = sc.read_h5ad(f"{args.data}scvi_high.h5ad")
-adata_integrated = metrics_preparation(
-    adata_integrated, "Metadata_JCP2022", True, integrated_obsm_key="X_emb"
-)
+adata_integrated = metrics_preparation(adata_integrated, "Metadata_JCP2022", True, integrated_obsm_key="X_emb")
 df = evaluate(
     adata_unintegrated,
     adata_integrated,
@@ -145,14 +141,12 @@ df = evaluate(
     "Metadata_Source",
     "scVI",
     compute_unintegrated=False,
-    compute_kbet=args.ignore_kbet,
+    compute_kbet=args.compute_kbet,
 )
 df.to_csv(f"{args.data}scib_scvi_high.csv")
 
 adata_integrated = sc.read_h5ad(f"{args.data}scanvi_high.h5ad")
-adata_integrated = metrics_preparation(
-    adata_integrated, "Metadata_JCP2022", True, integrated_obsm_key="X_emb"
-)
+adata_integrated = metrics_preparation(adata_integrated, "Metadata_JCP2022", True, integrated_obsm_key="X_emb")
 df = evaluate(
     adata_unintegrated,
     adata_integrated,
@@ -160,7 +154,7 @@ df = evaluate(
     "Metadata_Source",
     "scanVI",
     compute_unintegrated=False,
-    compute_kbet=args.ignore_kbet,
+    compute_kbet=args.compute_kbet,
 )
 df.to_csv(f"{args.data}scib_scanvi_high.csv")
 
@@ -175,7 +169,7 @@ df = evaluate(
     "Metadata_Source",
     "Harmony",
     compute_unintegrated=False,
-    compute_kbet=args.ignore_kbet,
+    compute_kbet=args.compute_kbet,
 )
 df.to_csv(f"{args.data}scib_harmony.csv")
 
@@ -188,7 +182,7 @@ df = evaluate(
     "Metadata_Source",
     "Scanorama",
     compute_unintegrated=False,
-    compute_kbet=args.ignore_kbet,
+    compute_kbet=args.compute_kbet,
 )
 df.to_csv(f"{args.data}scib_scanorama.csv")
 
@@ -201,7 +195,7 @@ df = evaluate(
     "Metadata_Source",
     "scGen",
     compute_unintegrated=False,
-    compute_kbet=args.ignore_kbet,
+    compute_kbet=args.compute_kbet,
     integrated_obsm_key="corrected_latent",
 )
 df.to_csv(f"{args.data}scib_scgen.csv")
@@ -215,7 +209,7 @@ df = evaluate(
     "Metadata_Source",
     "scVI",
     compute_unintegrated=False,
-    compute_kbet=args.ignore_kbet,
+    compute_kbet=args.compute_kbet,
 )
 df.to_csv(f"{args.data}scib_scvi.csv")
 
@@ -228,7 +222,7 @@ df = evaluate(
     "Metadata_Source",
     "scanVI",
     compute_unintegrated=False,
-    compute_kbet=args.ignore_kbet,
+    compute_kbet=args.compute_kbet,
 )
 df.to_csv(f"{args.data}scib_scanvi.csv")
 
@@ -243,7 +237,7 @@ df = evaluate_low_level(
     "Metadata_Source",
     "Harmony",
     compute_unintegrated=False,
-    compute_kbet=args.ignore_kbet,
+    compute_kbet=args.compute_kbet,
 )
 df.to_csv(f"{args.data}scib_harmony_direct_low.csv")
 
@@ -256,7 +250,7 @@ df = evaluate_low_level(
     "Metadata_Source",
     "Scanorama",
     compute_unintegrated=False,
-    compute_kbet=args.ignore_kbet,
+    compute_kbet=args.compute_kbet,
 )
 df.to_csv(f"{args.data}scib_scanorama_direct_low.csv")
 
@@ -269,7 +263,7 @@ df = evaluate_low_level(
     "Metadata_Source",
     "scGen",
     compute_unintegrated=False,
-    compute_kbet=args.ignore_kbet,
+    compute_kbet=args.compute_kbet,
     integrated_obsm_key="corrected_latent",
 )
 df.to_csv(f"{args.data}scib_scgen_direct_low.csv")
@@ -283,7 +277,7 @@ df = evaluate_low_level(
     "Metadata_Source",
     "scVI",
     compute_unintegrated=False,
-    compute_kbet=args.ignore_kbet,
+    compute_kbet=args.compute_kbet,
 )
 df.to_csv(f"{args.data}scib_scvi_direct_low.csv")
 
@@ -296,6 +290,6 @@ df = evaluate_low_level(
     "Metadata_Source",
     "scanVI",
     compute_unintegrated=False,
-    compute_kbet=args.ignore_kbet,
+    compute_kbet=args.compute_kbet,
 )
 df.to_csv(f"{args.data}scib_scanvi_direct_low.csv")

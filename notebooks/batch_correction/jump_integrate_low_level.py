@@ -1,6 +1,5 @@
 import scanpy as sc
 from bcc.batch_correction import (
-    scgen_integration,
     scanvi_integration,
     scvi_integration,
 )
@@ -22,8 +21,8 @@ parser.add_argument(
 parser.add_argument(
     "-method",
     type=str,
-    default="scgen",
-    choices=["scgen", "scanvi", "scvi"],
+    default="scanvi",
+    choices=["scanvi", "scvi"],
     help="Integration method that should be used (scgen, scanvi or scvi)",
 )
 args = parser.parse_args()
@@ -31,14 +30,7 @@ args = parser.parse_args()
 
 adata = sc.read_h5ad(args.i)
 
-if args.method == "scgen":
-    adata_per_source = scgen_integration(
-        adata,
-        batch="Metadata_Plate",
-        labels="Metadata_JCP2022",
-        hierarchical="Metadata_Source",
-    )
-elif args.method == "scanvi":
+if args.method == "scanvi":
     adata_per_source = scanvi_integration(
         adata,
         batch="Metadata_Plate",
